@@ -48,7 +48,7 @@ cfg.groups = {'IC','IL','NIC','NIL'};
 
 %segment of the experiment to analyze. This script for now was only tested
 %on "interaction_long"
-cfg.segments = {'laughter', 'interaction_long'};
+cfg.segments = {'interaction_long', 'laughter'};
 
 % Resampling parameters
 cfg.resTime = 3; % Resample time: one time point every 3
@@ -96,64 +96,50 @@ end
 % ------------------------------------------------------------------------- 
 
 for i = 1:length(cfg.segments)
-    cfg.currentSegment = cfg.segments{i};
+    cfg.currentsegment = cfg
 
-    % -------------------------------------------------------------------------
-    % Load and preprocess the data
-    % -------------------------------------------------------------------------
+% -------------------------------------------------------------------------
+% Load and preprocess the data
+% -------------------------------------------------------------------------
 
-    % Load WTC data for all groups, both "experimental" and "control"
-    % In the "interaction_long" phase, the control group is pre-created through averaged
-    % random permutations of participant pairs.
-    %In the "laughter" phase, the control group consists of real
-    % participant pairs that watched the same videos as "experimental" pairs but did not interact during
-    % video watching
-    % The function will also resample the data (averaging over time and frequency).
+% Load WTC data for all groups, both real and randomized (precomputed averages).
+% The function will also resample the data (averaging over time and frequency).
 
-    [all_data, all_data_control, fqs, tps] = LT_CBP_data_load(cfg);
+[all_data_real, all_data_RPA, fqs, tps] = LT_CBP_data_load(cfg);
 
-    % all_data_real: Real participant WTC data
-    % all_data_RPA: Averaged random permutation WTC data
-    % fqs: Resampled frequency points
-    % tps: Resampled time points
+% all_data_real: Real participant WTC data
+% all_data_RPA: Averaged random permutation WTC data
+% fqs: Resampled frequency points
+% tps: Resampled time points
 
-    % -------------------------------------------------------------------------
-    % Perform permutation testing
-    % -------------------------------------------------------------------------
+% -------------------------------------------------------------------------
+% Perform permutation testing
+% -------------------------------------------------------------------------
 
-    % Compute difference maps (real vs. random pairs) and permutation maps
-    [diffmaps, permmaps] = LT_CBP_permutations(all_data, all_data_control, n_permutes, fqs, tps);
+% Compute difference maps (real vs. random pairs) and permutation maps
+[diffmaps, permmaps] = LT_CBP_permutations(all_data_real, all_data_RPA, n_permutes, fqs, tps);
 
-    % diffmaps: Difference between real and random pair data
-    % permmaps: Null distributions generated from random permutations
+% diffmaps: Difference between real and random pair data
+% permmaps: Null distributions generated from random permutations
 
-    % -------------------------------------------------------------------------
-    % Compute z- and p-values for cluster-based statistics
-    % -------------------------------------------------------------------------
+% -------------------------------------------------------------------------
+% Compute z- and p-values for cluster-based statistics
+% -------------------------------------------------------------------------
 
-    % Compute z-scores, cluster sizes, and standard deviations for H0 distributions
-    [means_h0, stds_h0, zmaps, max_cluster_sizes] = LT_CBP_Clusters(diffmaps, permmaps, zval, n_permutes, fqs, tps);
+% Compute z-scores, cluster sizes, and standard deviations for H0 distributions
+[means_h0, stds_h0, zmaps, max_cluster_sizes] = LT_CBP_Clusters(diffmaps, permmaps, zval, n_permutes, fqs, tps);
 
-    % means_h0: Mean null distribution per pixel
-    % stds_h0: Standard deviation of the null distribution
-    % zmaps: Z-transformed maps for identifying significant regions
-    % max_cluster_sizes: Maximum cluster sizes for each permutation
+% means_h0: Mean null distribution per pixel
+% stds_h0: Standard deviation of the null distribution
+% zmaps: Z-transformed maps for identifying significant regions
+% max_cluster_sizes: Maximum cluster sizes for each permutation
 
-    % -------------------------------------------------------------------------
-    % Apply cluster-based multiple comparison corrections
-    % -------------------------------------------------------------------------
+% -------------------------------------------------------------------------
+% Apply cluster-based multiple comparison corrections
+% -------------------------------------------------------------------------
 
-    % Find significant clusters using corrected thresholds
-    [zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_sizes, pval, zmaps, fqs, tps);
+% Find significant clusters using corrected thresholds
+[zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_sizes, pval, zmaps, fqs, tps);
 
-    % zmapcorr: Z-map corrected for multiple comparisons
-    % cluster_thresh: Threshold for significant clusters
-    
-    % save results
-    zmap_filename = sprintf('%s\results\%s\zmaps', pwd, cfg.currentSegment);
-    cluster_thresh_filename = sprintf('%s\results\%s\cluster_thresh', pwd, cfg.currentSegment);
-    
-    save(zmap_filename, zmapcorr);
-    save(cluster_thresh_filename, cluster_thresh);
- 
-end
+% zmapcorr: Z-map corrected for multiple comparisons
+% cluster_thresh: Threshold for significant clusters

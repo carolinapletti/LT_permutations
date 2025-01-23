@@ -63,17 +63,22 @@ function [data_cell, data_control_cell, fqs, tps] = LT_CBP_data_load(cfg)
         group_pair = strsplit(cfg_part.currentPair, '_'); % Split the pair name to identify the group
         cfg_part.currentGroup = group_pair{1}; % Assign the group name
         
-        % Construct file paths for real and RPA data
-        cfg_part.srcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs');
-        cfg_part.controlsrcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs_RPA\', cfg_part.currentPair);
+        if contains(cfg_part.currentSegment, "laughter")
+            % if the segment is "laughter", create different 
+            if contains(cfg_part.currentGroup, "N")
+                cfg_part.controlsrcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs_RPA\', cfg_part.currentPair);    
+        else
+            % Construct file paths for real and RPA data
+            cfg_part.srcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs');
+            cfg_part.controlsrcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs_RPA\', cfg_part.currentPair);
+
+            fprintf('loading participant %s \n', cfg_part.currentPair)
+            filename = sprintf('%s\\%s.mat',cfg_part.srcDir, cfg_part.currentPair);
+            filename_control = sprintf('%s\\%s_avg.mat',cfg_part.controlsrcDir, cfg_part.currentPair);
         
-        fprintf('loading participant %s \n', cfg_part.currentPair)
-        filename = sprintf('%s\\%s.mat',cfg_part.srcDir, cfg_part.currentPair);
-        filename_control = sprintf('%s\\%s_avg.mat',cfg_part.controlsrcDir, cfg_part.currentPair);
-        
-        % -----------------------------------------------------------------
-        % Load coherence data
-        % -----------------------------------------------------------------
+            % -----------------------------------------------------------------
+            % Load coherence data
+            % -----------------------------------------------------------------
         
         try
             % Attempt to load experimental and control data
