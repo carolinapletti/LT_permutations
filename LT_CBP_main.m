@@ -1,54 +1,68 @@
-% permutation tests for fNIRS wavelet transform coherence data
+% -------------------------------------------------------------------------
+% Permutation tests for fNIRS wavelet transform coherence (WTC) data
+% -------------------------------------------------------------------------
+% This script performs statistical analysis on fNIRS WTC data for the interaction 
+% phase of the Laughing Together project. It compares real participant pairs to random permutations of 
+% participant data to identify time-frequency regions where real interactions 
+% differ significantly from randomized data.
 
-% for interaction data: irrespective of group, compare all participants
-% with random pairs (first calculate the random pairs)
-% difference between real pairs and averaged random permutation pairs will
-% tell us in which frequencies and time points there where differences
-% between real interacting participants and fake participants pairs -> so
-% it's a t-test, not an ANOVA!
+% The difference between real pairs and averaged random permutation pairs 
+% indicates frequencies and time points where interacting participants differ 
+% from fake (randomized) participant pairs.
 
-% for video data: compare participants watching videos together with
-% participants watching videos separately (since they are practically the
-% same as randomly permuted pairs - same stimuli but they don't even see
-% each other) -> again t-test, not ANOVA!
+% Steps in this script:
+% 1. Load precomputed WTC data for real and randomized participant pairs.
+% 2. Resample the data (time and frequency dimensions) for computational efficiency.
+% 3. Perform statistical tests using permutation testing to generate null distributions.
+% 4. Identify significant differences and correct for multiple comparisons.
 
-% for interaction data:
+%written by Carolina Pletti, 2025 (carolina.pletti@gmail.com)
 
-% load all interaction_long data
+% -------------------------------------------------------------------------
+% Load all interaction_long WTC data
+% -------------------------------------------------------------------------
 
 clear all
 
-% set statistical parameters
+% -------------------------------------------------------------------------
+% Set statistical and analysis parameters
+% -------------------------------------------------------------------------
+
 % p-value
 pval = 0.05;
 
 % convert p-value to Z value
-% if you don't have the stats toolbox, set zval=1.6449;
 zval = abs(norminv(pval));
 
-% number of permutations
+% Number of permutations for the statistical testing
 n_permutes = 1000;
 
+% -------------------------------------------------------------------------
+% Create configuration structure for data loading and analysis
+% -------------------------------------------------------------------------
+
+cfg = []; % Initialize an empty structure
+
+%names of the groups to analyze. Should correspond to subfolder names inside the raw data folder
+cfg.groups = {'IC','IL','NIC','NIL'}; 
+
+%segment of the experiment to analyze. This script for now was only tested
+%on "interaction_long"
+cfg.segment = 'interaction_long';
+
+% Resampling parameters
+cfg.resTime = 3; % Resample time: one time point every 3
+cfg.resFreq = 3; % Resample frequency: one frequency point every 3
+
+% Columns to exclude from resampling (e.g., metadata or non-signal columns)
+cfg.excCols = [1, 2, 3];
 
 
-% create empty structure that will contain all necessary parameters to load
-% the data
-cfg = [];
-cfg.groups = {'IC','IL','NIC','NIL'}; %names of the groups to be analyzed. Should correspond to subfolder names inside the raw data folder below
-cfg.segment = 'interaction_long'; %segment of the experiment to be analyzed. Options: laughter, interaction, interaction_long
-
-%how much should the data be resampled?
-cfg.resTime = 3; %for instance, one timepoint every three
-cfg.resFreq = 3; %for instance, one frequency every three
-
-%do the data contain columns that should not be included in the resampling?
-%If so, insert the numbers here
-cfg.excCols = [1,2,3];
-
-
-% --------------------------------------------------------------------
-%set all paths for loading and saving data, add folder with functions to the path. Change paths in the config_paths
-%function and following part of the script based on necessity 
+% -------------------------------------------------------------------------
+% Set paths for loading and saving data
+% -------------------------------------------------------------------------
+% Add folder paths for functions, toolboxes, and raw data.
+% Modify paths in the LT_CBP_config_paths function as needed.
 
 sel = false;
 
@@ -77,21 +91,48 @@ while sel == false
     end
 end
 
-% Load data and resample them (through averaging) so that there are less time points and less frequency points
+% -------------------------------------------------------------------------
+% Load and preprocess the data
+% -------------------------------------------------------------------------
 
-[all_data_real, all_data_RPA] = LT_CBP_data_load(cfg);
+% Load WTC data for all groups, both real and randomized (precomputed averages).
+% The function will also resample the data (averaging over time and frequency).
 
-                        
-% statistics via permutation testing
-[diffmaps, permmaps] = LT_CBP_permutations(all_data_real, all_data_RPA, n_permutes);
+[all_data_real, all_data_RPA, fqs, tps] = LT_CBP_data_load(cfg);
 
-%
+% all_data_real: Real participant WTC data
+% all_data_RPA: Averaged random permutation WTC data
+% fqs: Resampled frequency points
+% tps: Resampled time points
 
-% compute z- and p-values based on normalized distance to H0 distributions (per pixel)
+% -------------------------------------------------------------------------
+% Perform permutation testing
+% -------------------------------------------------------------------------
 
-[means_h0, stds_h0, zmaps, max_cluster_sizes] = LT_CBP_Clusters(diffmaps, permmaps, zval, n_permutes);
+% Compute difference maps (real vs. random pairs) and permutation maps
+[diffmaps, permmaps] = LT_CBP_permutations(all_data_real, all_data_RPA, n_permutes, fqs, tps);
 
-% find clusters with cluster based multiple comparison corrections
+% diffmaps: Difference between real and random pair data
+% permmaps: Null distributions generated from random permutations
 
-[zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_sizes, pval, zmaps);
+% -------------------------------------------------------------------------
+% Compute z- and p-values for cluster-based statistics
+% -------------------------------------------------------------------------
 
+% Compute z-scores, cluster sizes, and standard deviations for H0 distributions
+[means_h0, stds_h0, zmaps, max_cluster_sizes] = LT_CBP_Clusters(diffmaps, permmaps, zval, n_permutes, fqs, tps);
+
+% means_h0: Mean null distribution per pixel
+% stds_h0: Standard deviation of the null distribution
+% zmaps: Z-transformed maps for identifying significant regions
+% max_cluster_sizes: Maximum cluster sizes for each permutation
+
+% -------------------------------------------------------------------------
+% Apply cluster-based multiple comparison corrections
+% -------------------------------------------------------------------------
+
+% Find significant clusters using corrected thresholds
+[zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_sizes, pval, zmaps, fqs, tps);
+
+% zmapcorr: Z-map corrected for multiple comparisons
+% cluster_thresh: Threshold for significant clusters
