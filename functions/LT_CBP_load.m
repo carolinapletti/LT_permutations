@@ -1,4 +1,4 @@
-function data_cell = Cluster_load(data_cell, data, subj)
+function data_cell = LT_CBP_load(data_cell, data, subj, cfg)
 
     try
         data = data.coherences.all{1,1};
@@ -37,26 +37,36 @@ function data_cell = Cluster_load(data_cell, data, subj)
             else
                 continue
             end
-        end        
-        % Step 1: Vertically average every three rows
-        % Remove extra rows to make the size divisible by 3
-            
-        matrix = data_chan(1:45, :); % Now it has 45 rows, divisible by 3
+        end    
+        
+        % Resample the frequencies
+        % Are the rows (frequencies) divisible by cfg.resFreq? If
+        % not, eliminate extra rows
+        
+        nrows = floor(size(data_chan,1) / cfg.resFreq) * cfg.resFreq;
+        
+        matrix = data_chan(1:nrows, :);
 
         % Reshape and average vertically
-        matrixVert = reshape(matrix, 3, [], size(matrix,2)); % Split into groups of 3 rows
-        matrixAvgVert = squeeze(mean(matrixVert, 1, "omitnan")); % Average across each group of 3 rows
-        indexes = matrixAvgVert(:,1:3);
-
-        % Step 2: Horizontally average every three columns
-        % Remove extra columns to make the size divisible by 3
-        matrixAvgVert = matrixAvgVert(:, 4:3747); % Now it has 3747 columns, divisible by 3
+        matrixVert = reshape(matrix, cfg.resFreq, [], size(matrix,2)); % Split into groups of cfg.resFreq rows
+        matrixAvgVert = squeeze(mean(matrixVert, 1, "omitnan")); % Average across each group of cfg.resFreq rows
+        
+        %remove index columns (if there are any)
+        if isfield(cfg, 'excCols')
+            remainingColumns = setdiff(1:size(matrix, 2), cfg.excCols);
+            matrixAvgVert = matrixAvgVert(:,remainingColumns);
+        end
+        
+        % Resample the time points
+        % Are the columns (time points) divisible by cfg.resTime? If
+        % not, eliminate extra columns
+        
+        ncols = floor(size(matrixAvgVert,2) / cfg.resTime) * cfg.resTime;        
+        matrixAvgVert = matrixAvgVert(:, 1:ncols);
 
         % Reshape and average horizontally
-        matrixHoriz = reshape(matrixAvgVert, size(matrixAvgVert,1), 3, []);
-        chan_matrix = squeeze(mean(matrixHoriz, 2, "omitnan")); % Average across each group of 3 columns
-        
-        chan_matrix = [indexes, chan_matrix];
+        matrixHoriz = reshape(matrixAvgVert, size(matrixAvgVert,1), cfg.resTime, []);
+        chan_matrix = squeeze(mean(matrixHoriz, 2, "omitnan")); % Average across each group of cdf.resTime columns
         
         data_cell{1,chx}{1,subj} = chan_matrix;
         
