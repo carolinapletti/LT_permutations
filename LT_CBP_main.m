@@ -110,7 +110,7 @@ for i = 1:length(cfg.segments)
     % video watching
     % The function will also resample the data (averaging over time and frequency).
 
-    [all_data, all_data_control, fqs, tps] = LT_CBP_data_load(cfg);
+    [all_data, all_data_control, fqs, tps, part_list] = LT_CBP_data_load(cfg);
 
     % all_data_real: Real participant WTC data
     % all_data_RPA: Averaged random permutation WTC data
@@ -122,7 +122,7 @@ for i = 1:length(cfg.segments)
     % -------------------------------------------------------------------------
 
     % Compute difference maps (real vs. random pairs) and permutation maps
-    [diffmaps, permmaps] = LT_CBP_permutations(all_data, all_data_control, n_permutes, fqs, tps);
+    [diffmaps, permmaps] = LT_CBP_permutations(all_data, all_data_control, n_permutes, fqs, tps, cfg);
 
     % diffmaps: Difference between real and random pair data
     % permmaps: Null distributions generated from random permutations

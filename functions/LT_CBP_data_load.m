@@ -1,4 +1,4 @@
-function [data_cell, data_control_cell, fqs, tps] = LT_CBP_data_load(cfg)
+function [data_cell, data_control_cell, fqs, tps, part_list] = LT_CBP_data_load(cfg)
 
 % LT_CBP_data_load: Loads fNIRS wavelet transform coherence (WTC) data for analysis
 % Inputs:
@@ -52,9 +52,13 @@ function [data_cell, data_control_cell, fqs, tps] = LT_CBP_data_load(cfg)
 
     data_cell = cell(1, 10); % Store real data
     data_control_cell = cell(1, 10); % Store random permutation averages (RPA)
+    part_list = cell(1,2) % Create list of all participant pairs processed for further analyses
 
-    subj = 0; % Counter for valid subjects
-    for id = 1:20 %numOfSources
+    subj = 1; % Counter for valid subjects
+    exp = 0; % Counter for experimental participants
+    con = 0; % Counter for control participants
+    x = 1; %switch to apply to participant counter if interaction segment is ran
+    for id = 1:numOfSources
         % -----------------------------------------------------------------
         % Retrieve and set up configuration for the current participant
         % -----------------------------------------------------------------
@@ -63,37 +67,60 @@ function [data_cell, data_control_cell, fqs, tps] = LT_CBP_data_load(cfg)
         group_pair = strsplit(cfg_part.currentPair, '_'); % Split the pair name to identify the group
         cfg_part.currentGroup = group_pair{1}; % Assign the group name
         
-        % Construct file paths for real and RPA data
-        cfg_part.srcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs');
-        cfg_part.controlsrcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs_RPA\', cfg_part.currentPair);
-        
         fprintf('loading participant %s \n', cfg_part.currentPair)
-        filename = sprintf('%s\\%s.mat',cfg_part.srcDir, cfg_part.currentPair);
-        filename_control = sprintf('%s\\%s_avg.mat',cfg_part.controlsrcDir, cfg_part.currentPair);
         
-        % -----------------------------------------------------------------
-        % Load coherence data
-        % -----------------------------------------------------------------
+        if contains(cfg_part.currentSegment, "laughter")
+            % if the segment is "laughter", create different 
+            if contains(cfg_part.currentGroup, "N")
+                cfg_part.controlsrcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs\');    
+                filename_control = sprintf('%s\\%s.mat',cfg_part.controlsrcDir, cfg_part.currentPair);
+            else 
+                cfg_part.srcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs\');
+                filename = sprintf('%s\\%s.mat',cfg_part.srcDir, cfg_part.currentPair);
+            end
+        else
+            % Construct file paths for real and RPA data
+            cfg_part.srcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs');
+            cfg_part.controlsrcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs_RPA\', cfg_part.currentPair);
+
+            filename = sprintf('%s\\%s.mat',cfg_part.srcDir, cfg_part.currentPair);
+            filename_control = sprintf('%s\\%s_avg.mat',cfg_part.controlsrcDir, cfg_part.currentPair);
+            
+            x = 0; %
+        end
+        
+            % -----------------------------------------------------------------
+            % Load coherence data
+            % Process and store data for the current participant
+            % -----------------------------------------------------------------
         
         try
             % Attempt to load experimental and control data
-            data = load(filename); 
-            data_control = load(filename_control); 
-            subj = subj + 1; % Increment valid subject counter
+            if exist('filename', 'var')
+                data = load(filename); 
+                [data_cell, fqs, tps, error] = LT_CBP_load(data_cell, data, subj-(con*x), cfg_part);
+                if error ~= 1
+                    exp = exp + 1; %increase counter for experimental participants
+                    part_list{1,1}{exp,1} = cfg_part.currentPair; %save name of current participant pair
+                end
+            end
+            if exist('filename_control', 'var')
+                data_control = load(filename_control);
+                [data_control_cell, fqs, tps, error] = LT_CBP_load(data_control_cell, data_control, subj-(exp*x), cfg_part);
+                if error ~= 1
+                    con = con + 1; %increase counter for control participants
+                    part_list{1,2}{con,1} = cfg_part.currentPair; %save name of current participant pair
+                end
+            end
+            if error ~= 1
+                subj = subj + 1; % Increment valid subject counter
+            end
         catch
             % If loading fails, skip the participant and display a warning
             fprintf('no coherence file avaliable for pair %s \n', cfg_part.currentPair)
+            clear filename filename_control
             continue
         end
-        
-        % -----------------------------------------------------------------
-        % Process and store data for the current participant
-        % -----------------------------------------------------------------
-        
-        % Load real data into the data_cell array
-        [data_cell, fqs, tps] = LT_CBP_load(data_cell, data, subj, cfg);
-        % Load RPA data into the data_RPA_cell array
-        [data_control_cell, fqs, tps] = LT_CBP_load(data_control_cell, data_control, subj, cfg);
-
+        clear filename filename_control
     end
 end
