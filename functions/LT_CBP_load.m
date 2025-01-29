@@ -1,4 +1,4 @@
-function [data_cell, fqs, tps, error] = LT_CBP_load(data_cell, data, subj, cfg)
+function [data_cell, fqs, tps, err] = LT_CBP_load(data_cell, data, subj, cfg)
 % LT_CBP_load: Process and resample coherence data for fNIRS analysis
 % Inputs:
 %   - data_cell: Cell array to store the processed data
@@ -9,11 +9,13 @@ function [data_cell, fqs, tps, error] = LT_CBP_load(data_cell, data, subj, cfg)
 %   - data_cell: Updated cell array with processed coherence data
 %   - fqs: List of frequency points after resampling
 %   - tps: List of time points after resampling
+%   - err: control variable to check if there was an error while running
+%   this code
 
 % Carolina Pletti, 2025 (carolina.pletti@gmail.com)
     
     %counter to check for errors in the process
-    error = 0;
+    err = 0;
     
     % ---------------------------------------------------------------------
     % Load coherence data from the input structure
@@ -29,7 +31,7 @@ function [data_cell, fqs, tps, error] = LT_CBP_load(data_cell, data, subj, cfg)
         catch
             % If neither field is available, log a warning and skip
             sprintf("no data for participant at index %d", subj)
-            error = 1;
+            err = 1;
         end
     end
     
@@ -55,7 +57,7 @@ function [data_cell, fqs, tps, error] = LT_CBP_load(data_cell, data, subj, cfg)
         data = data{1,1};
     else
         sprintf('data of participant %s don''t have neither 1 nor 2 trials!', cfg.currentPair)
-        error = 1;
+        err = 1;
     end 
     
     % ---------------------------------------------------------------------
@@ -134,6 +136,6 @@ function [data_cell, fqs, tps, error] = LT_CBP_load(data_cell, data, subj, cfg)
             chx = chx + 1;
         end
     catch
-        error = 1;
+        err = 1;
     end
 end

@@ -1,15 +1,18 @@
-function [data_cell, data_control_cell, fqs, tps, part_list] = LT_CBP_data_load(cfg)
+function [data_cell, data_control_cell, cfg, part_list] = LT_CBP_data_load(cfg)
 
 % LT_CBP_data_load: Loads fNIRS wavelet transform coherence (WTC) data for analysis
 % Inputs:
 %   - cfg: Configuration structure containing analysis parameters and paths
 % Outputs:
-%   - data_cell: Cell array containing WTC data for real participant pairs
+%   - data_cell: Cell array containing WTC data for experimental participant pairs
 %   - data_control_cell: Cell array containing control participants, for
 %   instance WTC data for random permutation averages (RPA) or participants
 %   that did not interact
-%   - fqs: Frequency points after loading and resampling
-%   - tps: Time points after loading and resampling
+%   - cfg: Configuration structure updated with the fields:
+%           - fqs: Frequency points after loading and resampling
+%           - tps: Time points after loading and resampling
+%   - part_list: Cell array containing participant labels for experimental
+%   and control participants
 
 % Carolina Pletti, 2025 (carolina.pletti@gmail.com)
 
@@ -50,13 +53,13 @@ function [data_cell, data_control_cell, fqs, tps, part_list] = LT_CBP_data_load(
     % 9 - IFGr-TPJl (or TPJl-IFGr)
     % 10 - IFGl-TPJr (or TPJr-IFGl)
 
-    data_cell = cell(1, 10); % Store real data
-    data_control_cell = cell(1, 10); % Store random permutation averages (RPA)
+    data_cell = cell(1, 10); % Store experimental data
+    data_control_cell = cell(1, 10); % Store control data
     part_list = cell(1,2) % Create list of all participant pairs processed for further analyses
 
-    subj = 1; % Counter for valid subjects
-    exp = 0; % Counter for experimental participants
-    con = 0; % Counter for control participants
+    n_subj = 1; % Counter for valid subjects
+    n_exp = 0; % Counter for experimental participants
+    n_con = 0; % Counter for control participants
     x = 1; %switch to apply to participant counter if interaction segment is ran
     for id = 1:numOfSources
         % -----------------------------------------------------------------
@@ -70,7 +73,8 @@ function [data_cell, data_control_cell, fqs, tps, part_list] = LT_CBP_data_load(
         fprintf('loading participant %s \n', cfg_part.currentPair)
         
         if contains(cfg_part.currentSegment, "laughter")
-            % if the segment is "laughter", create different 
+            % if the segment is "laughter", construct different file paths
+            % (experimental, control), based on group
             if contains(cfg_part.currentGroup, "N")
                 cfg_part.controlsrcDir = strcat(cfg_part.dataDir, cfg_part.currentGroup, '\', cfg_part.currentSegment, '\preprocessed\Coherence_ROIs\');    
                 filename_control = sprintf('%s\\%s.mat',cfg_part.controlsrcDir, cfg_part.currentPair);
@@ -98,22 +102,22 @@ function [data_cell, data_control_cell, fqs, tps, part_list] = LT_CBP_data_load(
             % Attempt to load experimental and control data
             if exist('filename', 'var')
                 data = load(filename); 
-                [data_cell, fqs, tps, error] = LT_CBP_load(data_cell, data, subj-(con*x), cfg_part);
-                if error ~= 1
-                    exp = exp + 1; %increase counter for experimental participants
-                    part_list{1,1}{exp,1} = cfg_part.currentPair; %save name of current participant pair
+                [data_cell, fqs, tps, err] = LT_CBP_load(data_cell, data, n_subj-(n_con*x), cfg_part);
+                if err ~= 1
+                    n_exp = n_exp + 1; %increase counter for experimental participants
+                    part_list{1,1}{n_exp,1} = cfg_part.currentPair; %save name of current participant pair
                 end
             end
             if exist('filename_control', 'var')
                 data_control = load(filename_control);
-                [data_control_cell, fqs, tps, error] = LT_CBP_load(data_control_cell, data_control, subj-(exp*x), cfg_part);
-                if error ~= 1
-                    con = con + 1; %increase counter for control participants
-                    part_list{1,2}{con,1} = cfg_part.currentPair; %save name of current participant pair
+                [data_control_cell, fqs, tps, err] = LT_CBP_load(data_control_cell, data_control, n_subj-(n_exp*x), cfg_part);
+                if err ~= 1
+                    n_con = n_con + 1; %increase counter for control participants
+                    part_list{1,2}{n_con,1} = cfg_part.currentPair; %save name of current participant pair
                 end
             end
-            if error ~= 1
-                subj = subj + 1; % Increment valid subject counter
+            if err ~= 1
+                n_subj = n_subj + 1; % Increment valid subject counter
             end
         catch
             % If loading fails, skip the participant and display a warning
@@ -123,4 +127,6 @@ function [data_cell, data_control_cell, fqs, tps, part_list] = LT_CBP_data_load(
         end
         clear filename filename_control
     end
+    cfg.fqs = fqs;
+    cfg.tps = tps;
 end

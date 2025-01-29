@@ -1,15 +1,13 @@
-function [mean_h0_cell, std_h0_cell, zmap_cell, max_cluster_sizes_cell] = LT_CBP_Clusters(diffmap_cell, permmaps_cell, zval, n_permutes, fqs, tps)
+function [mean_h0_cell, std_h0_cell, zmap_cell, max_cluster_sizes_cell] = LT_CBP_Clusters(diffmap_cell, permmaps_cell, cfg)
 % LT_CBP_Clusters
 % Performs cluster-based correction for time-frequency maps of coherence differences.
 % Computes Z-maps, thresholds them based on a Z-value, and estimates cluster sizes from permutation tests.
 
 % Inputs:
-% - diffmap_cell: Cell array containing difference maps (real - RPA) for each channel.
+% - diffmap_cell: Cell array containing difference maps (experimental - control) for each channel.
 % - permmaps_cell: Cell array containing null hypothesis maps (from permutations) for each channel.
 % - zval: Z-threshold for significance (e.g., corresponding to p = 0.05).
-% - n_permutes: Number of permutations performed.
-% - fqs: Frequency points.
-% - tps: Time points.
+% - cfg: Configuration structure containing analysis parameters and paths
 
 % Outputs:
 % - mean_h0_cell: Cell array of mean null hypothesis maps for each channel.
@@ -47,7 +45,7 @@ function [mean_h0_cell, std_h0_cell, zmap_cell, max_cluster_sizes_cell] = LT_CBP
         zmap = (diffmap-mean_h0) ./ std_h0;
 
         % Threshold Z-map based on the Z-value, setting subthreshold values to 0
-        zmap(abs(zmap)<zval) = 0;
+        zmap(abs(zmap)<cfg.zval) = 0;
 
         % Set NaN values in Z-map to 0
         zmap(isnan(zmap))=0;
@@ -60,23 +58,23 @@ function [mean_h0_cell, std_h0_cell, zmap_cell, max_cluster_sizes_cell] = LT_CBP
         
         % Plot the original difference map
         subplot(121)
-        imagesc(tps,fqs,diffmap);
+        imagesc(cfg.tps,cfg.fqs,diffmap);
         xlabel('Time point'), ylabel('Period (sec)')
         title(sprintf('TF map of real WTC differential values for channel %d', i))
         
         % Plot the thresholded Z-map
         subplot(122)
-        imagesc(tps,fqs,zmap);
+        imagesc(cfg.tps,cfg.fqs,zmap);
         xlabel('Time point'), ylabel('Period (sec)')
         title(sprintf('Thresholded TF map of Z-values for channel %d', i))
 
         % Step 6: Perform cluster-based correction using permutation maps
         % Initialize a matrix to store the maximum cluster sizes for each permutation
-        max_cluster_sizes = zeros(1,n_permutes);
+        max_cluster_sizes = zeros(1,cfg.n_permutes);
 
 
         % Loop through each permutation map
-        for permi = 1:n_permutes
+        for permi = 1:cfg.n_permutes
     
             % Extract the current permutation map
             threshimg = squeeze(permmaps(permi,:,:));
@@ -85,7 +83,7 @@ function [mean_h0_cell, std_h0_cell, zmap_cell, max_cluster_sizes_cell] = LT_CBP
             threshimg = (threshimg-mean_h0)./std_h0;
     
             % Threshold the Z-map for the permutation map
-            threshimg(abs(threshimg)<zval) = 0;
+            threshimg(abs(threshimg)<cfg.zval) = 0;
     
     
             % Identify clusters in the thresholded Z-map (requires Image Processing Toolbox)

@@ -96,9 +96,9 @@ function [diffmap_cell, permmaps_cell] = LT_CBP_permutations(data_cell, data_con
                 % control videos (C) remains the same in both groups after
                 % randomization, to avoid introducing a confound.
                 % Randomization is performed on the NI/I factor only (non
-                % interaction, interaction)
+                % interaction, interac
                 
-                % Step 1: Split indexes into C and L group indexes
+                % Step 1: Split data into C and L groups
                 IC_indices = find(contains(part_list{1,1}(:,1), 'C')); % Find all IC participants
                 IL_indices = find(contains(part_list{1,1}(:,1), 'L')); % Find all IL participants
                 NIC_indices = find(contains(part_list{1,2}(:,1), 'C'))+ length(part_list{1,1}); % Find all NIC participants
@@ -137,6 +137,6 @@ function channelMatrix = trim_and_concat(data, i)
         % Trim each matrix to have the same number of columns
         trimmedMatrices = cellfun(@(x) x(:, 1:minCols), matrices, 'UniformOutput', false);
         % Concatenate along the third dimension
-        channelMatrix = cat(3, trimmedMatrices{:});
+        channelMatrix = cat(3, trimmedMatrices{:}); % Real participant data
         
 end

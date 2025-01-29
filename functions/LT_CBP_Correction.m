@@ -1,4 +1,4 @@
-function [zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_sizes, pval, zmaps, fqs, tps)
+function [zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_sizes, zmaps, cfg)
 % LT_CBP_Correction
 % Performs cluster correction on the Z-maps using the permutation-based
 % null hypothesis distribution and applies a cluster threshold based on a
@@ -8,10 +8,12 @@ function [zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_si
 % Inputs:
 % - diffmaps: Cell array containing the difference maps for each channel.
 % - max_cluster_sizes: Cell array containing the maximum cluster sizes from permutations for each channel.
-% - pval: Desired p-value for significance (e.g., p = 0.05).
-% - zmaps: Cell array containing the Z-maps for each channel.
-% - fqs: Frequency points for plotting.
-% - tps: Time points for plotting.
+% - cfg: Configuration structure containing analysis parameters and paths,
+% in particular:
+%       - cfg.pval: Desired p-value for significance (e.g., p = 0.05).
+%       - cfg.zmaps: Cell array containing the Z-maps for each channel.
+%       - cfg.fqs: Frequency points for plotting.
+%       - cfg.tps: Time points for plotting.
 
 % Outputs:
 % - zmapcorr: Cell array containing the corrected (thresholded) Z-maps for each channel.
@@ -43,7 +45,7 @@ function [zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_si
 
         % Step 3: Determine the cluster threshold using the null hypothesis distribution
         % Use the p-value to find the threshold for significant clusters.
-        thresh = prctile(max_cluster,100-(100*pval)); % Calculate threshold for p-value
+        thresh = prctile(max_cluster,100-(100*cfg.pval)); % Calculate threshold for p-value
 
 
         % Step 4: Find and threshold real clusters based on the computed threshold
@@ -61,21 +63,21 @@ function [zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_si
 
         % Step 5: Prepare for visualization (contour plots, etc.)
         % Create a grid for contour plotting
-        [TPS, FQS] = meshgrid(tps, fqs); % Create meshgrid for time and frequency axes
+        [TPS, FQS] = meshgrid(cfg.tps, cfg.fqs); % Create meshgrid for time and frequency axes
 
         % Step 6: Visualization of results
         figure, clf
 
         % Subplot 1: Display the original difference map (no thresholding)
         subplot(221)
-        imagesc(tps, fqs, diffmap) % Plot difference map
+        imagesc(cfg.tps, cfg.fqs, diffmap) % Plot difference map
         set(gca, 'YDir', 'normal') % Flip Y-axis for correct orientation
         xlabel('Time points'), ylabel('Period (Sec)')
         title(sprintf('WTC, no thresholding, channel %d', i))
 
         % Subplot 2: Display the difference map with thresholded contours
         subplot(222)
-        imagesc(tps, fqs, diffmap) % Plot difference map again
+        imagesc(cfg.tps, cfg.fqs, diffmap) % Plot difference map again
         set(gca, 'YDir', 'normal') % Flip Y-axis
         hold on
         contour(TPS, FQS, logical(zmap), 1, 'linecolor', 'k') % Overlay contour of significant clusters
@@ -84,7 +86,7 @@ function [zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_si
 
         % Subplot 3: Display the thresholded Z-map
         subplot(223)
-        imagesc(tps, fqs, zmap) % Plot thresholded Z-map
+        imagesc(cfg.tps, cfg.fqs, zmap) % Plot thresholded Z-map
         set(gca, 'YDir', 'normal') % Flip Y-axis
         xlabel('Time points'), ylabel('Period (Sec)')
         title(sprintf('Thresholded z-map channel %d', i))
