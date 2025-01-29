@@ -71,9 +71,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Functions
 
-### `LT_CBP_load`
+### `LT_CBP_load` & `LT_CBP_data_load`
 
-This function loads and preprocesses the time-frequency WTC data, averaging across channels when necessary and resampling the frequency and time points according to the provided configuration (`cfg`).
+These functions load and preprocesses the time-frequency WTC data, averaging across channels when necessary and resampling the frequency and time points according to the provided configuration (`cfg`).
 
 ### `LT_CBP_permutations`
 
