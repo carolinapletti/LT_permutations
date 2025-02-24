@@ -56,8 +56,7 @@ function [data_cell, fqs, tps, err] = LT_CBP_load(data_cell, data, subj, cfg)
     elseif length(data) == 1
         data = data{1,1};
     else
-        sprintf('data of participant %s don''t have neither 1 nor 2 trials!', cfg.currentPair)
-        err = 1;
+        data = data;
     end 
     
     % ---------------------------------------------------------------------

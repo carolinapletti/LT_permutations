@@ -85,7 +85,9 @@ function [mean_h0_cell, std_h0_cell, zmap_cell, max_cluster_sizes_cell] = LT_CBP
     
             % Threshold the Z-map for the permutation map
             threshimg(abs(threshimg)<cfg.zval) = 0;
-    
+            
+            % Set NaN values in Z-map to 0
+            threshimg(isnan(threshimg))=0;
     
             % Identify clusters in the thresholded Z-map (requires Image Processing Toolbox)
             islands = bwconncomp(threshimg); % Find connected components (clusters)
