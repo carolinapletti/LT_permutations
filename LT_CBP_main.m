@@ -144,10 +144,10 @@ for i = 1:length(cfg.segments)
     % cluster_thresh: Threshold for significant clusters
     
     % save results
-    zmap_filename = sprintf('%s\results\%s\zmaps', pwd, cfg.currentSegment);
-    cluster_thresh_filename = sprintf('%s\results\%s\cluster_thresh', pwd, cfg.currentSegment);
+    zmap_filename = sprintf('%s\\results_%s_zmaps.mat', pwd, cfg.currentSegment);
+    cluster_thresh_filename = sprintf('%s\\results_%s_cluster_thresh.mat', pwd, cfg.currentSegment);
     
-    save(zmap_filename, zmapcorr);
-    save(cluster_thresh_filename, cluster_thresh);
+    save(zmap_filename, 'zmapcorr');
+    save(cluster_thresh_filename, 'cluster_thresh');
  
 end

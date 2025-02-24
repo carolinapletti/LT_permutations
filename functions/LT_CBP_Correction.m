@@ -79,8 +79,12 @@ function [zmapcorr, cluster_thresh] = LT_CBP_Correction(diffmaps, max_cluster_si
         subplot(222)
         imagesc(cfg.tps, cfg.fqs, diffmap) % Plot difference map again
         set(gca, 'YDir', 'normal') % Flip Y-axis
-        hold on
-        contour(TPS, FQS, logical(zmap), 1, 'linecolor', 'k') % Overlay contour of significant clusters
+        try
+            hold on
+            contour(TPS, FQS, logical(zmap), 1, 'linecolor', 'k') % Overlay contour of significant clusters
+        catch
+            fprintf("couldn't draw contour for some reason")
+        end
         xlabel('Time points'), ylabel('Period (Sec)')
         title(sprintf('WTC with contour channel %d', i))
 

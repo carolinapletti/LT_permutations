@@ -44,7 +44,8 @@ function [mean_h0_cell, std_h0_cell, zmap_cell, max_cluster_sizes_cell] = LT_CBP
         % Compute Z-scores: Z = (real_diff - mean_null) / std_null
         zmap = (diffmap-mean_h0) ./ std_h0;
 
-        % Threshold Z-map based on the Z-value, setting subthreshold values to 0
+        % Threshold Z-map based on the Z-value, setting subthreshold values
+        % to 0
         zmap(abs(zmap)<cfg.zval) = 0;
 
         % Set NaN values in Z-map to 0

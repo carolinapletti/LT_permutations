@@ -43,19 +43,20 @@ function [data_cell, data_control_cell, cfg, part_list] = LT_CBP_data_load(cfg)
     % Prepare empty cell arrays to store data for each channel
     % Channels correspond to specific regions of interest (ROIs) or ROI pairs:
     % 1 - IFGr-IFGr
-    % 2 - IFGl-IFGl
-    % 3 - TPJr-TPJr
-    % 4 - TPJl-TPJl
-    % 5 - IFGr-IFGl (or IFGl-IFGr)
-    % 6 - TPJr-TPJl (or TPJl-TPJr)
-    % 7 - IFGr-TPJr (or TPJr-IFGr)
-    % 8 - IFGl-TPJl (or TPJl-IFGl)
-    % 9 - IFGr-TPJl (or TPJl-IFGr)
-    % 10 - IFGl-TPJr (or TPJr-IFGl)
+    % 2 - IFGr-IFGl (or IFGl-IFGr)
+    % 3 - IFGr-TPJr (or TPJr-IFGr)
+    % 4 - IFGr-TPJl (or TPJl-IFGr)
+    % 5 - IFGl-IFGl
+    % 6 - IFGl-TPJr (or TPJr-IFGl)
+    % 7 - IFGl-TPJl (or TPJl-IFGl)
+    % 8 - TPJr-TPJr
+    % 9 - TPJr-TPJl (or TPJl-TPJr)
+    % 10 - TPJl-TPJl
+
 
     data_cell = cell(1, 10); % Store experimental data
     data_control_cell = cell(1, 10); % Store control data
-    part_list = cell(1,2) % Create list of all participant pairs processed for further analyses
+    part_list = cell(1,2); % Create list of all participant pairs processed for further analyses
 
     n_subj = 1; % Counter for valid subjects
     n_exp = 0; % Counter for experimental participants
